@@ -67,16 +67,25 @@ public class FunctionAgent extends Agent {
 			ACLMessage msg = receive(mt);
 			if (msg != null) {
 				// Получен запрос на расчет функции
-					double[] xValues = (double[]) msg.getContentObject();
-					double[] yValues = new double[xValues.length];
+				double[] xValues = null;
+				try {
+					xValues = (double[]) msg.getContentObject();
+				} catch (UnreadableException e) {
+					throw new RuntimeException(e);
+				}
+				double[] yValues = new double[xValues.length];
 					for (int i = 0; i < xValues.length; i++) {
 						yValues[i] = calculateFunction(xValues[i]);
 					}
 					// Отправляем ответ
 					ACLMessage reply = msg.createReply();
 					reply.setPerformative(ACLMessage.INFORM);
+				try {
 					reply.setContentObject(yValues);
-					send(reply);
+				} catch (IOException e) {
+					throw new RuntimeException(e);
+				}
+				send(reply);
 					System.out.println(getLocalName() + " отправил результаты вычислений агенту " + msg.getSender().getLocalName());
 			} else {
 				block();
