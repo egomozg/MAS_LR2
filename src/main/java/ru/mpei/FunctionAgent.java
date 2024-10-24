@@ -67,7 +67,6 @@ public class FunctionAgent extends Agent {
 			ACLMessage msg = receive(mt);
 			if (msg != null) {
 				// Получен запрос на расчет функции
-				try {
 					double[] xValues = (double[]) msg.getContentObject();
 					double[] yValues = new double[xValues.length];
 					for (int i = 0; i < xValues.length; i++) {
@@ -79,9 +78,6 @@ public class FunctionAgent extends Agent {
 					reply.setContentObject(yValues);
 					send(reply);
 					System.out.println(getLocalName() + " отправил результаты вычислений агенту " + msg.getSender().getLocalName());
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
 			} else {
 				block();
 			}
@@ -144,9 +140,13 @@ public class FunctionAgent extends Agent {
 					);
 					ACLMessage reply = receive(mt);
 					if (reply != null) {
+						double[] receivedYValues = null;
 						try {
-							double[] receivedYValues = (double[]) reply.getContentObject();
-							for (int i = 0; i < 3; i++) {
+							receivedYValues = (double[]) reply.getContentObject();
+						} catch (UnreadableException e) {
+							throw new RuntimeException(e);
+						}
+						for (int i = 0; i < 3; i++) {
 								sumY[i] += receivedYValues[i];
 							}
 							repliesCount++;
@@ -189,9 +189,6 @@ public class FunctionAgent extends Agent {
 									}
 								}
 							}
-						} catch (Exception e) {
-							e.printStackTrace();
-						}
 					} else {
 						block();
 					}
@@ -216,18 +213,18 @@ public class FunctionAgent extends Agent {
 
 		@Override
 		public void action() {
-			try {
 				String nextAgent = otherAgents.get(new Random().nextInt(otherAgents.size()));
 				ACLMessage passMsg = new ACLMessage(ACLMessage.INFORM);
 				passMsg.addReceiver(new AID(nextAgent, AID.ISLOCALNAME));
 				passMsg.setConversationId("pass");
 				double[] packet = {xToSend, deltaToSend};
+			try {
 				passMsg.setContentObject(packet);
-				send(passMsg);
-				System.out.println(getLocalName() + " передает очередь агенту " + nextAgent);
-			} catch (Exception e) {
-				e.printStackTrace();
+			} catch (IOException e) {
+				throw new RuntimeException(e);
 			}
+			send(passMsg);
+				System.out.println(getLocalName() + " передает очередь агенту " + nextAgent);
 		}
 	}
 
